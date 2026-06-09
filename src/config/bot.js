@@ -16,18 +16,18 @@ export const botConfig = {
 
     // Activity lines shown under the bot name.
     // `type` number mapping from Discord:
-    // 0 = Playing
+    // 0 = Gestendo il server /Nexus
     // 1 = Streaming
     // 2 = Listening
     // 3 = Watching
-    // 4 = Gestendo il server /Nexus
+    // 4 = Custom
     // 5 = Competing
     activities: [
       {
         // Text users will see (example: "Playing /help | /Nexus Bot").
         name: "/help for command list",
-        // Activity type number (0 = Playing).
-        type: 4, 
+        // Activity type number (0 = Gestendo il server /Nexus).
+        type: 0, 
       },
     ],
   },
