@@ -20,14 +20,14 @@ export const botConfig = {
     // 1 = Streaming
     // 2 = Listening
     // 3 = Watching
-    // 4 = Custom
+    // 4 = Gestendo il server /Nexus
     // 5 = Competing
     activities: [
       {
         // Text users will see (example: "Playing /help | /Nexus Bot").
-        name: "type /help for command list, made whith ❤️",
+        name: "/help for command list",
         // Activity type number (0 = Playing).
-        type: 3, 
+        type: 4, 
       },
     ],
   },
