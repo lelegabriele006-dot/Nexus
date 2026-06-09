@@ -43,12 +43,12 @@ export default {
     .addSubcommand((subcommand) =>
         subcommand
             .setName("setup")
-            .setDescription("Set up a new application")
+            .setDescription("Crea una candidatura")
     )
     .addSubcommand((subcommand) =>
         subcommand
             .setName("review")
-            .setDescription("Approve or deny an application")
+            .setDescription("Approva o rifiuta la candidatura")
             .addStringOption((option) =>
                 option
                     .setName("id")
@@ -59,28 +59,28 @@ export default {
     .addSubcommand((subcommand) =>
         subcommand
             .setName("list")
-            .setDescription("List all applications")
+            .setDescription("Lista di tutte le candidature")
             .addStringOption((option) =>
                 option
                     .setName("status")
-                    .setDescription("Filter by status")
+                    .setDescription("Filtrate dallo stato della candidatura")
                     .addChoices(
-                        { name: "Pending", value: "pending" },
-                        { name: "Approved", value: "approved" },
-                        { name: "Denied", value: "denied" },
+                        { name: "Pending", value: "in corso..." },
+                        { name: "Approved", value: "approvata" },
+                        { name: "Denied", value: "rifiutata" },
                     ),
             )
             .addStringOption((option) =>
-                option.setName("role").setDescription("Filter by role ID"),
+                option.setName("role").setDescription("Filtrade dall'ID del ruolo"),
             )
             .addUserOption((option) =>
-                option.setName("user").setDescription("Filter by user"),
+                option.setName("user").setDescription("Filtrata dall'utente"),
             )
             .addNumberOption((option) =>
                 option
                     .setName("limit")
                     .setDescription(
-                        "Maximum number of applications to show (default: 10)",
+                        "Massime candidature mostrate (default: 10)",
                     )
                     .setMinValue(1)
                     .setMaxValue(25),
@@ -89,11 +89,11 @@ export default {
     .addSubcommand((subcommand) =>
         subcommand
             .setName("dashboard")
-            .setDescription("Open the applications configuration dashboard")
+            .setDescription("Apri la dashboard delle candidature")
             .addStringOption((option) =>
                 option
                     .setName("application")
-                    .setDescription("Select an application to configure")
+                    .setDescription("Scegli una candidatura")
                     .setRequired(false)
                     .setAutocomplete(true),
             ),
@@ -104,7 +104,7 @@ export default {
     execute: withErrorHandling(async (interaction) => {
         if (!interaction.inGuild()) {
             return InteractionHelper.safeReply(interaction, {
-                embeds: [errorEmbed("This command can only be used in a server.")],
+                embeds: [errorEmbed("Questo comando può essere usato solo in un server.")],
                 flags: ["Ephemeral"],
             });
         }
@@ -143,7 +143,7 @@ async function handleSetup(interaction) {
     // Ensure interaction hasn't been deferred/replied yet (safety check)
     if (interaction.deferred || interaction.replied) {
         return InteractionHelper.safeReply(interaction, {
-            embeds: [errorEmbed("This interaction has already been processed. Please try the command again.")],
+            embeds: [errorEmbed("Questa interazione è gia stata fatta. Perfavore riprova a fare il comando.")],
             flags: ["Ephemeral"],
         });
     }
@@ -151,11 +151,11 @@ async function handleSetup(interaction) {
     // Build modal using LabelBuilder API with a native role select dropdown
     const modal = new ModalBuilder()
         .setCustomId('app_setup_modal')
-        .setTitle('Set Up New Application');
+        .setTitle('Crea una nuova candidatura');
 
     const roleSelect = new RoleSelectMenuBuilder()
         .setCustomId('role_id')
-        .setPlaceholder('Select the role users will apply for')
+        .setPlaceholder('Scegli il ruolo di cui ti vuoi candidare.')
         .setRequired(true);
 
     const roleLabel = new LabelBuilder()
@@ -166,7 +166,7 @@ async function handleSetup(interaction) {
     const appNameInput = new TextInputBuilder()
         .setCustomId('app_name')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('e.g., Moderator, Helper, Developer')
+        .setPlaceholder('e.g., Chat Mod, Helper, Owner')
         .setMaxLength(50)
         .setMinLength(1)
         .setRequired(true);
@@ -178,7 +178,7 @@ async function handleSetup(interaction) {
     const q1Input = new TextInputBuilder()
         .setCustomId('app_question_1')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Why do you want this role?')
+        .setPlaceholder('Perchè vuoi questo ruolo?')
         .setMaxLength(100)
         .setMinLength(1)
         .setRequired(true);
@@ -190,7 +190,7 @@ async function handleSetup(interaction) {
     const q2Input = new TextInputBuilder()
         .setCustomId('app_question_2')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('What experience do you have?')
+        .setPlaceholder('Che esperienze hai?')
         .setMaxLength(100)
         .setRequired(false);
 
@@ -220,7 +220,7 @@ async function handleSetup(interaction) {
     }).catch(() => null);
 
     if (!submitted) {
-        logger.info('App setup modal dismissed or timed out', { guildId: interaction.guild.id, userId: interaction.user.id });
+        logger.info('Il setup del modal non è andato a buon fine oppure è andato in time out.', { guildId: interaction.guild.id, userId: interaction.user.id });
         return;
     }
 
@@ -230,7 +230,7 @@ async function handleSetup(interaction) {
 
     if (!roleId) {
         await submitted.reply({
-            embeds: [errorEmbed('No Role Selected', 'You must select a role for the application.')],
+            embeds: [errorEmbed('Non hai selezionato un ruolo', 'Devi selezionare un ruolo per candidarti!')],
             flags: ['Ephemeral'],
         });
         return;
@@ -246,7 +246,7 @@ async function handleSetup(interaction) {
     const role = await interaction.guild.roles.fetch(roleId).catch(() => null);
     if (!role) {
         await submitted.reply({
-            embeds: [errorEmbed('Invalid Role', 'The selected role could not be found.')],
+            embeds: [errorEmbed('Ruolo invalido', 'Il ruolo selezionato non può essere trovato.')],
             flags: ['Ephemeral'],
         });
         return;
@@ -256,7 +256,7 @@ async function handleSetup(interaction) {
     const existingRoles = await getApplicationRoles(interaction.client, interaction.guild.id);
     if (existingRoles.some(r => r.roleId === roleId)) {
         await submitted.reply({
-            embeds: [errorEmbed('Already Configured', `The role ${role} is already configured as an application.`)],
+            embeds: [errorEmbed('Già configurato', `Il ruolo ${role} è già stato configurato per una candidatura.`)],
             flags: ['Ephemeral'],
         });
         return;
@@ -282,8 +282,8 @@ async function handleSetup(interaction) {
 
     await submitted.reply({
         embeds: [successEmbed(
-            '✅ Application Created',
-            `**${appName}** application has been created for ${role}.\n\nYou can customize the log channel, manager roles, questions, and retention period in the dashboard.`,
+            '✅ Candidatura creata',
+            `**${appName}** candidatura creata per il ruolo ${role}.\n\nYou can customize the log channel, manager roles, questions, and retention period in the dashboard.`,
         )],
         flags: ['Ephemeral'],
     });
@@ -305,7 +305,7 @@ async function handleReview(interaction) {
     );
     if (!application) {
         return InteractionHelper.safeEditReply(interaction, {
-            embeds: [errorEmbed("Application not found.")],
+            embeds: [errorEmbed("Candidatura non trovata.")],
             flags: ["Ephemeral"],
         });
     }
@@ -313,7 +313,7 @@ async function handleReview(interaction) {
     if (application.status !== "pending") {
         return InteractionHelper.safeEditReply(interaction, {
             embeds: [
-                errorEmbed("This application has already been processed."),
+                errorEmbed("Errore."),
             ],
             flags: ["Ephemeral"],
         });
@@ -321,7 +321,7 @@ async function handleReview(interaction) {
 
     // Show application details with approve/deny buttons
     const appEmbed = createEmbed({
-        title: `📋 Review Application`,
+        title: `📋 Ricontrolla la candidatura`,
         description: `**User:** <@${application.userId}>\n**Application:** ${application.roleName}\n**Application ID:** \`${appId}\``,
         color: 'info',
     });
@@ -463,7 +463,7 @@ async function handleReview(interaction) {
                         }
                     }
                 } catch (error) {
-                    logger.warn('Failed to update log message for application', {
+                    logger.warn('Impossibile caricare il log della candidatura.', {
                         error: error.message,
                         applicationId: appId,
                         logMessageId: application.logMessageId
@@ -479,7 +479,7 @@ async function handleReview(interaction) {
                     );
                     await member.roles.add(application.roleId);
                 } catch (error) {
-                    logger.error('Failed to assign role to approved applicant', {
+                    logger.error('Impossibile assegnare il ruolo.', {
                         error: error.message,
                         userId: application.userId,
                         roleId: application.roleId,
@@ -493,16 +493,16 @@ async function handleReview(interaction) {
                 embeds: [
                     successEmbed(
                         `Application ${status}`,
-                        `The application has been **${status}**.`,
+                        `La candidatura è  **${status}**.`,
                     ),
                 ],
                 flags: ["Ephemeral"],
             });
 
         } catch (error) {
-            logger.error('Error reviewing application:', error);
+            logger.error('Errore durante la ricontrollazione della candidatura:', error);
             await buttonInteraction.reply({
-                embeds: [errorEmbed('Error', 'An error occurred while reviewing the application.')],
+                embeds: [errorEmbed('Error', 'Un errore è accaduto durante il ricontrollo.')],
                 flags: ["Ephemeral"],
             });
         }
@@ -512,7 +512,7 @@ async function handleReview(interaction) {
         if (reason === 'time') {
             const timeoutEmbed = createEmbed({
                 title: '⏱️ Review Timeout',
-                description: 'The review buttons have timed out.',
+                description: 'Il bottone "Ricontrolla" non ha funzionato.',
                 color: 'warning',
             });
 
@@ -569,20 +569,20 @@ async function handleList(interaction) {
         if (applicationRoles.length > 0) {
             const embed = createEmbed({ 
                 title: "No Applications Found", 
-                description: "No submitted applications found matching the specified criteria.\n\nHowever, the following application roles are configured:" 
+                description: "Nessuna candidatura contiene questo criterio.\n\nHowever, la candidatura per questo ruolo è già stata configurate:" 
             });
 
             applicationRoles.forEach((appRole, index) => {
                 const role = interaction.guild.roles.cache.get(appRole.roleId);
                 embed.addFields({
                     name: `${index + 1}. ${appRole.name}`,
-                    value: `**Role:** ${role ? `<@&${appRole.roleId}>` : 'Role not found'}\n**Available for applications:** Yes`,
+                    value: `**Role:** ${role ? `<@&${appRole.roleId}>` : 'Ruolo non trovato'}\n**Available for applications:** Yes`,
                     inline: false
                 });
             });
 
             embed.setFooter({
-                text: "Users can apply with /apply submit or see available roles with /apply list"
+                text: "Gli utenti possono candidarsi con /apply submit oppure vedere i ruoli possibili per candidarsi con :  **/apply list"
             });
 
             return InteractionHelper.safeEditReply(interaction, { embeds: [embed], flags: ["Ephemeral"] });
@@ -590,8 +590,8 @@ async function handleList(interaction) {
             return InteractionHelper.safeEditReply(interaction, {
                 embeds: [
                     errorEmbed(
-                        "No applications found and no application roles configured.\n" +
-                        "Use `/app-admin roles add` to configure application roles first."
+                        "Candidatura non trovata o non configurata.\n" +
+                        "Usa `/app-admin roles add` per configurare le candidature."
                     ),
                 ],
                 flags: ["Ephemeral"],
@@ -603,7 +603,7 @@ async function handleList(interaction) {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .slice(0, limit);
 
-    const embed = createEmbed({ title: "Submitted Applications", description: `Showing ${applications.length} applications.`, });
+    const embed = createEmbed({ title: "Candidature mandate", description: `Showing ${applications.length} applications.`, });
 
     applications.forEach((app) => {
         const statusView = getApplicationStatusPresentation(app?.status);
@@ -612,14 +612,14 @@ async function handleList(interaction) {
         const createdAt = app?.createdAt ? new Date(app.createdAt) : null;
         const createdAtDisplay = createdAt && !Number.isNaN(createdAt.getTime())
             ? createdAt.toLocaleString()
-            : 'Unknown date';
+            : 'Data sconosciuta';
 
         embed.addFields({
             name: `${statusView.statusEmoji} ${roleName} - ${username}`,
             value:
                 `**ID:** \`${app.id}\`\n` +
-                `**Status:** ${statusView.statusEmoji} ${statusView.statusLabel}\n` +
-                `**Date:** ${createdAtDisplay}`,
+                `**Stato:** ${statusView.statusEmoji} ${statusView.statusLabel}\n` +
+                `**Data:** ${createdAtDisplay}`,
             inline: true,
         });
     });
@@ -670,7 +670,7 @@ export async function handleApplicationReviewModal(interaction) {
             
             await user.send({ embeds: [dmEmbed] });
         } catch (error) {
-            logger.error('Error sending DM to user:', error);
+            logger.error('Errore a mandare il dm al membro / utente :', error);
         }
         
         if (application.logMessageId && application.logChannelId) {
@@ -697,7 +697,7 @@ export async function handleApplicationReviewModal(interaction) {
                     }
                 }
             } catch (error) {
-                logger.error('Error updating log message:', error);
+                logger.error('Errore ricaricando i messaggi dei log :', error);
             }
         }
         
@@ -714,16 +714,16 @@ export async function handleApplicationReviewModal(interaction) {
             embeds: [
                 successEmbed(
                     `${getApplicationStatusPresentation(status).statusEmoji} Application ${getApplicationStatusPresentation(status).statusLabel}`,
-                    `The application has been marked as ${getApplicationStatusPresentation(status).statusLabel}.`
+                    `L'applicazione è stata segnata ${getApplicationStatusPresentation(status).statusLabel}.`
                 )
             ],
             flags: ["Ephemeral"]
         });
         
     } catch (error) {
-        logger.error('Error processing application review:', error);
+        logger.error('Errore durante la revisione della candidatura :', error);
         await InteractionHelper.safeEditReply(interaction, {
-            embeds: [errorEmbed('An error occurred while processing the application.')],
+            embeds: [errorEmbed('Errore durante il ricontrollo della candidatura.')],
             flags: ["Ephemeral"]
         });
     }
